@@ -1,7 +1,7 @@
-# Cognito AI
+# Cognito Protocol
 
 ## 🌐 Description
-**Cognito AI** is a decentralized platform that allows anyone with unique, valuable knowledge to create and monetize their **AI Persona**.  
+**Cognito Protocol** is a decentralized platform that allows anyone with unique, valuable knowledge to create and monetize their **AI Persona**.  
 These AIs are powered by a hybrid strategy:
 - **Fine-tuning** → to shape a unique personality and voice.  
 - **RAG (Retrieval-Augmented Generation)** → to provide private, up-to-date, and in-depth information.  
