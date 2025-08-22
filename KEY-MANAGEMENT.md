@@ -1,80 +1,56 @@
-# 🔐 Private Data Flow on 0G Storage
+# 🔐 Private Data Storage Flow on 0G Storage
 
 ## **Step 1: Data Preparation**
 
-* Persona Owner has a knowledge base (docs, embeddings, vector DB...).
-* Generate a **master key K** (symmetric key AES/ChaCha20).
-* Use `K` to **encrypt the data** before uploading.
+* Users (non-technical, no-code) simply upload **files (CSV, JSON, etc.)**.
+* The system automatically generates a **master key K** (AES/ChaCha20).
+* The data is **encrypted with K** before upload.
 
-👉 At this point, 0G Storage only stores ciphertext. Without `K`, no one can read the data.
+👉 0G Storage only stores **ciphertext**, not the original data.
 
 ---
 
-## **Step 2: Upload Data**
+## **Step 2: Data Upload**
 
-* Upload ciphertext → 0G Storage (Key-Value / Object layer).
-* Include metadata (hash, proof).
-* Smart contract may register ownership (Persona Owner = data owner).
+* Encrypted data (ciphertext) is uploaded to **0G Storage** (Key-Value or Object layer).
+* After successful upload, 0G returns:
+
+  * **`rootHash`**: a hash proving data integrity.
+  * **`tx`**: an on-chain transaction recorded on 0G Chain.
+* Metadata (`rootHash`, `tx`) can be stored in a smart contract to prove **data ownership**.
 
 ---
 
 ## **Step 3: Key Management**
 
-Two possible flows:
+### **Flow A – Keys stored on Foundation Server (simpler)**
 
-### **Flow A – Server Holds the Key (Simpler)**
+1. The master key `K` is stored in a **Foundation-managed Key Vault** (e.g., HSM or secured storage).
+2. When a user wants to access data:
 
-1. `K` is stored on a **dedicated server**.
-2. When a user requests access:
+   * A **token-gated smart contract** verifies whether the user owns the required NFT/Token.
+   * If valid → the Foundation server **wraps `K`** with the user’s public key and delivers it.
+3. The user decrypts `K` with their private key.
+4. The user then uses `K` to decrypt their data retrieved from 0G Storage.
 
-   * Smart contract checks if the user owns the required NFT/Token.
-   * If yes, the server wraps `K` with the user’s public key → sends it back.
-3. User decrypts the wrapped key with their private key → obtains `K`.
-4. User decrypts data from 0G Storage.
-
-⚡ Pros: Easy to implement, good for MVP.
-⚠️ Cons: Centralized trust (if server is hacked, security is compromised).
+⚡ Simple, user-friendly, works for nocode users, but Foundation has custody of the key.
 
 ---
 
-### **Flow B – MPC / Threshold Encryption (Advanced)**
+### **Flow B – MPC / Threshold Encryption (advanced)**
 
-1. `K` is **split into multiple fragments (K1, K2, K3, …)** using Secret Sharing.
-2. Validators / trusted nodes in **0G Compute or 0G Chain** each hold a fragment.
-3. When a user requests access:
+* Instead of storing the master key `K` on the Foundation server, it is split into **multiple key shares** using MPC/Threshold cryptography.
+* A valid subset of nodes must collaborate to reconstruct `K`.
+* No single party (including Foundation) can control the entire key.
 
-   * Smart contract verifies user has the NFT/Token.
-   * An **MPC protocol** is triggered.
-   * Nodes collaborate to wrap `K` with the user’s public key (without reconstructing `K` in one place).
-4. User decrypts the wrapped key with their private key → obtains `K`.
-5. User decrypts data from 0G Storage.
-
-⚡ Pros: Highly secure, decentralized, no single point of failure.
-⚠️ Cons: Complex, more expensive, higher latency.
+⚡ More decentralized and censorship-resistant, but technically more complex.
 
 ---
 
 ## **Step 4: Data Access**
 
-* With `K`, the user decrypts ciphertext from 0G Storage.
-* RAG runs **locally on the client/agent** (not backend) to generate answers.
-* Ensures **conversation history + private data never leave the user’s side**.
+* Once the user has `K`, they can decrypt their files locally.
+* Retrieval-Augmented Generation (RAG) runs **locally on the client**.
+* **Conversation history & private data remain on the user’s device**.
 
----
 
-## 🔄 Comparison
-
-| Stage              | Flow A (Server Key)        | Flow B (MPC / Threshold) |
-| ------------------ | -------------------------- | ------------------------ |
-| MVP Implementation | ✅ Easy                     | ❌ Complex                |
-| Security           | Medium                     | High                     |
-| Decentralization   | ❌ No                       | ✅ Yes                    |
-| Cost               | Low                        | High                     |
-| Best for           | Early PoC, small user base | Scaling, multi-persona   |
-
----
-
-👉 In summary:
-
-* **Early stage** → Use **Flow A (Server Key)** for quick MVP.
-* **Scaling stage** → Move to **Flow B (MPC/Threshold)** for trustless decentralization.
